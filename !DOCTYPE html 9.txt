@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<title>健康射擊對戰穩定版</title>
+
+<style>
+body{
+  margin:0;
+  background:#000;
+  overflow:hidden;
+  font-family:sans-serif;
+}
+
+/* 血條 */
+#ui{
+  position:absolute;
+  top:10px;
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  padding:0 20px;
+}
+
+.bar{
+  width:40%;
+  height:20px;
+  background:#333;
+}
+
+.hp{
+  height:100%;
+  background:#0f0;
+  transition:0.2s;
+}
+
+/* 戰場 */
+#arena{
+  position:absolute;
+  bottom:120px;
+  width:100%;
+  display:flex;
+  justify-content:space-between;
+  padding:0 120px;
+}
+
+/* ⭐ 改成「純圖片角色」避免壞掉 */
+.character{
+  width:260px;
+  height:260px;
+  background-size:contain;
+  background-repeat:no-repeat;
+}
+
+/* 英雄 */
+#hero{
+  background-image:url('https://raw.githubusercontent.com/chriscourses/fighting-game/main/img/samuraiMack/Idle.png');
+}
+
+/* 怪物 */
+#monster{
+  background-image:url('https://raw.githubusercontent.com/chriscourses/fighting-game/main/img/kenji/Idle.png');
+  transform:scaleX(-1);
+}
+
+/* ⭐ 子彈（固定顯示） */
+.bullet{
+  width:12px;
+  height:5px;
+  background:white;
+  position:absolute;
+  top:50%;
+  z-index:999;
+  box-shadow:0 0 10px white;
+}
+
+/* 題目 */
+#questionBox{
+  position:absolute;
+  bottom:0;
+  width:100%;
+  background:#111;
+  text-align:center;
+  padding:10px;
+}
+
+button{margin:5px;}
+</style>
+</head>
+
+<body>
+
+<!-- UI -->
+<div id="ui">
+  <div class="bar"><div id="heroHP" class="hp" style="width:100%"></div></div>
+  <div class="bar"><div id="monsterHP" class="hp" style="width:100%"></div></div>
+</div>
+
+<!-- 角色 -->
+<div id="arena">
+  <div id="hero" class="character"></div>
+  <div id="monster" class="character"></div>
+</div>
+
+<!-- 題目 -->
+<div id="questionBox">
+  <h3 id="q"></h3>
+  <div id="ans"></div>
+</div>
+
+<script>
+
+let hero=100, monster=100;
+let used=new Set();
+
+/* ===== 100題 ===== */
+const qs=[
+{q:"睡眠不足影響？",a:["記憶下降","變強","長高","健康"],c:0},
+{q:"運動好處？",a:["健康","肥胖","疲勞","失眠"],c:0},
+{q:"蛋白質？",a:["修復","糖","油","酒"],c:0}
+];
+
+while(qs.length<100){
+  let i=qs.length+1;
+  qs.push({
+    q:`第${i}題：健康行為？`,
+    a:["運動","熬夜","抽菸","暴食"],
+    c:0
+  });
+}
+
+/* 題目 */
+function getQ(){
+  if(used.size===100){
+    alert("破關");
+    location.reload();
+  }
+  let i;
+  do{i=Math.floor(Math.random()*100);}while(used.has(i));
+  used.add(i);
+  return qs[i];
+}
+
+/* 血條 */
+function update(){
+  document.getElementById("heroHP").style.width=hero+"%";
+  document.getElementById("monsterHP").style.width=monster+"%";
+}
+
+/* ⭐ 子彈（完全修正版） */
+function shoot(fromHero){
+
+  let b=document.createElement("div");
+  b.className="bullet";
+  document.body.appendChild(b);
+
+  let x=fromHero?200:window.innerWidth-200;
+  let y=window.innerHeight/2;
+
+  b.style.left=x+"px";
+  b.style.top=y+"px";
+
+  let move=setInterval(()=>{
+
+    x += fromHero ? 20 : -20;
+    b.style.left=x+"px";
+
+    if(x>window.innerWidth-200 || x<200){
+      clearInterval(move);
+      b.remove();
+
+      if(fromHero) monster-=10;
+      else hero-=10;
+
+      update();
+      check();
+    }
+
+  },16);
+}
+
+/* 題目 */
+function load(){
+  let q=getQ();
+  document.getElementById("q").innerText=q.q;
+
+  let box=document.getElementById("ans");
+  box.innerHTML="";
+
+  q.a.forEach((t,i)=>{
+    let btn=document.createElement("button");
+    btn.innerText=t;
+    btn.onclick=()=>{
+      if(i===q.c) shoot(true);
+      else shoot(false);
+      load();
+    };
+    box.appendChild(btn);
+  });
+}
+
+/* 勝負 */
+function check(){
+  if(hero<=0) alert("你輸了");
+  if(monster<=0) alert("你贏了");
+}
+
+/* start */
+update();
+load();
+
+</script>
+</body>
+</html>
